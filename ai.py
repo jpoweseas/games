@@ -42,9 +42,12 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode
         alpha = max_opt(alpha, lb)
         beta = min_opt(beta, ub)
 
-    children_in_eval_order = []
+    if debug_mode:
+        children_in_eval_order = []
+
     for state in state_choices:
-        children_in_eval_order.append(state.to_reversible_format())
+        if debug_mode:
+            children_in_eval_order.append(state.to_reversible_format())
 
         result = negamax(state, alpha, beta, debug_mode=debug_mode, depth_limit=(depth_limit - 1), trans=trans)
 

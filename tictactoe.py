@@ -1,6 +1,7 @@
 import sys, random, unittest
 
 from ai import AIPlayer
+from reference_ai import SimpleAIPlayer
 
 LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 4, 8], [2, 4, 6], [0, 3, 6], [1, 4, 7], [2, 5, 8]]
 INVERSE_LINES = [[i for (i, line) in enumerate(LINES) if x in line] for x in range(9)]
@@ -178,6 +179,7 @@ class Tests(unittest.TestCase):
     def test_reversible_format(self):
         init_state = TicTacToe()
 
+        # TODO: rewrite to use for_each_state
         states_to_check = [init_state]
         while len(states_to_check) > 0:
             state = states_to_check.pop()

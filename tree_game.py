@@ -18,10 +18,10 @@ LOSE_VALUE = -10000
 class TreeGame:
     def generate_tree(curr_depth):
         if random.random() < (curr_depth - 2) * 0.2:
-            return { 'type' : 'Terminal', 'winner' : choice(['A', 'B', 'tie'])}
+            return { 'type' : 'Terminal', 'winner' : choice(['A', 'B', 'tie']), 'hash' : randint(0, 2147483647)}
         else:
             children = [TreeGame.generate_tree(curr_depth + 1) for _ in range(randint(2, 8))]
-            return { 'type' : choice(['A', 'B']), 'score' : randint(-100, 100), 'children' : children }
+            return { 'type' : choice(['A', 'B']), 'score' : randint(-100, 100), 'children' : children, 'hash' : randint(0, 2147483647) }
 
     # nodes look like:
     # { type : 'A', score : 3, children : [] }
@@ -65,6 +65,9 @@ class TreeGame:
                     )
         else:
             return self.tree['score']
+
+    def hash(self):
+        return self.tree['hash']
 
     def __repr__(self):
         return str(self.tree)

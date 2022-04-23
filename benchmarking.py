@@ -15,8 +15,8 @@ def bench(ai, depth_limit, ai_str):
     ai.choose_move(node, state, debug_mode=True, depth_limit=depth_limit)
     stop = time.time()
 
-    delta = stop - start
-    print(f'{ai_str}: {delta:.2f}s to search depth_limit = {depth_limit}')
+    ms = (stop - start) * 1000
+    print(f'{ai_str}: {ms:.1f}ms to search depth_limit = {depth_limit}')
 
 if __name__ == '__main__':
     depth_limit = 10
