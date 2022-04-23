@@ -39,6 +39,8 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode
         (lb, ub) = trans[current_state.hash()]
         if lb == ub and lb is not None:
             return { 'score' : lb, 'pv' : [] }
+        alpha = max_opt(alpha, lb)
+        beta = min_opt(beta, ub)
 
     children_in_eval_order = []
     for state in state_choices:
