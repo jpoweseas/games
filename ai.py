@@ -34,11 +34,11 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode
     best_score_so_far = None
     best_pv = None
 
-    # current_hash = current_state.hash()
-    # if current_hash in trans:
-    #     (lb, ub) = trans[current_state.hash()]
-    #     if lb == ub and lb is not None:
-    #         return lb
+    current_hash = current_state.hash()
+    if current_hash in trans:
+        (lb, ub) = trans[current_state.hash()]
+        if lb == ub and lb is not None:
+            return { 'score' : lb, 'pv' : [] }
 
     children_in_eval_order = []
     for state in state_choices:
