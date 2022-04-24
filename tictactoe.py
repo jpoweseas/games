@@ -204,8 +204,8 @@ if __name__ == '__main__':
         ref_ai.choose_move(choices, state, debug_mode=True, depth_limit=100)
     else:
         state = TicTacToe()
-        # for move in [4, 1, 0]:
-        #     state = state.add_new_mark_and_flip_turn(move)
+        for move in [4, 1, 0]:
+            state = state.add_new_mark_and_flip_turn(move)
         ai = AIPlayer(playing_as='A')
         node_type, choices = state.next_node()
         ai.choose_move(choices, state, debug_mode=True, depth_limit=100)

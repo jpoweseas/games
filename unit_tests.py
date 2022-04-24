@@ -34,28 +34,28 @@ class BasicTests(unittest.TestCase):
     def test_trivial(self):
         tree = create_tree('A')
         state = TreeGame(tree=tree)
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)['score']
+        score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
 
         self.assertEqual(score, ai.WIN_VALUE)
 
     def test_simple(self):
         tree = create_tree([0, [-1, 'A', 'B'], [1, 'A', 'A']])
         state = TreeGame(tree=tree)
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)['score']
+        score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
 
         self.assertEqual(score, ai.WIN_VALUE)
 
     def test_limited_depth(self):
         tree = create_tree([0, [-1, 'A', 'B'], [1, 'A', 'A']])
         state = TreeGame(tree=tree)
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=1)['score']
+        score = ai.negamax(state, alpha=None, beta=None, depth_limit=1)
 
         self.assertEqual(score, 1)
 
     def test_depth_two(self):
         tree = create_tree([0, [-1, [-2, 'B', 'B'], 'B'], [1, [1, 'B', 'A'], [2, 'A', 'B']]])
         state = TreeGame(tree=tree)
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=3)['score']
+        score = ai.negamax(state, alpha=None, beta=None, depth_limit=3)
 
         self.assertEqual(score, ai.WIN_VALUE)
 
@@ -63,14 +63,14 @@ class BasicTests(unittest.TestCase):
         tree = create_tree([0, 'tie', [-10, [-100, 'B'], [-10, 'A', 'B']]])
         state = TreeGame(tree=tree)
         result = ai.negamax(state, alpha=None, beta=None, depth_limit=3)
-        score = result['score']
+        score = result
 
         self.assertEqual(score, 0)
 
     def test_first_four_levels(self):
         def compare_ai_against_reference(state):
             to_play = state.get_player_to_play()
-            score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)['score']
+            score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
             ref_score = reference_ai.negamax(state, depth_limit=100)
             self.assertEqual(score, ref_score, msg='\n'+str(state))
 
