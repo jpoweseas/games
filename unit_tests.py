@@ -77,12 +77,5 @@ class BasicTests(unittest.TestCase):
         for_each_state(TicTacToe(), compare_ai_against_reference, 4)
 
 if __name__ == '__main__':
-    state = TicTacToe()
-    for move in [4, 1, 0]:
-        state = state.add_new_mark_and_flip_turn(move)
-
-    ref_score = reference_ai.negamax(state, depth_limit=100, debug_mode=True)
-
-if __name__ == '__main__':
     unittest.main()
     test_first_four_levels()

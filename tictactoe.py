@@ -194,8 +194,18 @@ class Tests(unittest.TestCase):
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'test':
         unittest.main()
+    if len(sys.argv) > 1 and sys.argv[1] == 'ref':
+        state = TicTacToe()
+        for move in [4, 1, 0]:
+            state = state.add_new_mark_and_flip_turn(move)
+
+        ref_ai = SimpleAIPlayer(playing_as=True)
+        node_type, choices = state.next_node()
+        ref_ai.choose_move(choices, state, debug_mode=True, depth_limit=100)
     else:
         state = TicTacToe()
-        ai = AIPlayer(playing_as=True)
+        # for move in [4, 1, 0]:
+        #     state = state.add_new_mark_and_flip_turn(move)
+        ai = AIPlayer(playing_as='A')
         node_type, choices = state.next_node()
         ai.choose_move(choices, state, debug_mode=True, depth_limit=100)

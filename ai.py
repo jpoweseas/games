@@ -23,8 +23,10 @@ def min_opt(a, b):
 def resolve_random(state_with_probability_list, debug_mode=False, depth_limit=0):
     return sum([prob * negamax(state, depth_limit=(depth_limit - 1)) for state in state_with_probability_list])
 
-def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode=False, depth_limit=0, trans={}):
-    # This is the max score when invert = False, min score when invert = True
+def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=0, trans={}):
+    init_alpha = alpha
+    init_beta = beta
+
     state_choices = [current_state.resolve_choice(choice) for choice in choices]
     state_choices.sort(key=lambda state : state.evaluate())
 
@@ -35,21 +37,26 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode
     best_pv = None
 
     current_hash = current_state.hash()
-    if current_hash in trans:
-        (lb, ub) = trans[current_state.hash()]
-        if lb == ub and lb is not None:
-            return { 'score' : lb, 'pv' : [] }
-        alpha = max_opt(alpha, lb)
-        beta = min_opt(beta, ub)
+    # if current_hash in trans:
+    #     (lb, ub) = trans[current_state.hash()]
+    #     if lb == ub and lb is not None:
+    #         print(f'gotcha {current_hash}-{parent_hash}')
+    #         return { 'score' : lb, 'pv' : [] }
+    #     alpha = max_opt(alpha, lb)
+    #     beta = min_opt(beta, ub)
 
     if debug_mode:
         children_in_eval_order = []
 
     for state in state_choices:
-        if debug_mode:
-            children_in_eval_order.append(state.to_reversible_format())
+        if alpha is not None and beta is not None and alpha >= beta:
+            # Don't update bounds .. for now
+            break
 
-        result = negamax(state, alpha, beta, debug_mode=debug_mode, depth_limit=(depth_limit - 1), trans=trans)
+        if debug_mode:
+            children_in_eval_order.append(str(state.hash()))
+
+        result = negamax(state, alpha, beta, parent_hash=current_hash, debug_mode=debug_mode, depth_limit=(depth_limit - 1), trans=trans)
 
         if result is None:
             continue
@@ -66,10 +73,6 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode
             if best_score_so_far is None or score > best_score_so_far:
                 best_score_so_far = score
                 best_pv = pv
-
-        if alpha is not None and beta is not None and alpha >= beta:
-            # Don't update bounds .. for now
-            break
     else:
         # when we don't cutoff
         trans[current_state.hash()] = (best_score_so_far, best_score_so_far)
@@ -78,10 +81,11 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode
         is_cutoff = len(children_in_eval_order) < len(state_choices)
         debug_mode.writerow([
             current_state.hash(),
+            parent_hash,
             current_state.to_reversible_format(),
             best_score_so_far,
-            alpha,
-            beta,
+            init_alpha,
+            init_beta,
             '|'.join(children_in_eval_order),
             is_cutoff
             ])
@@ -99,7 +103,7 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, debug_mode
 # beta  : best choice available to player B
 # alpha < beta normally, when it flips that game tree is doneso
 # return type looks like { score }
-def negamax(state, alpha, beta, debug_mode=False, depth_limit=0, trans={}):
+def negamax(state, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=0, trans={}):
     if depth_limit < 0:
         assert False
     elif depth_limit == 0:
@@ -123,20 +127,20 @@ def negamax(state, alpha, beta, debug_mode=False, depth_limit=0, trans={}):
         if debug_mode:
             debug_mode.writerow([
                 state.hash(),
+                parent_hash,
                 state.to_reversible_format(),
                 ret['score'],
-                # alpha,
-                # beta,
+                alpha,
+                beta,
                 # '|'.join(children_in_eval_order),
                 # is_cutoff
-                None, None, None, None
+                None, None
                 ])
 
         return ret
 
     elif node_type == 'A' or node_type == 'B':
-
-        result = evaluate_player_node(state, node.values(), (node_type == 'B'), alpha, beta, debug_mode=debug_mode, depth_limit=depth_limit, trans=trans)
+        result = evaluate_player_node(state, node.values(), (node_type == 'B'), alpha, beta, parent_hash=parent_hash, debug_mode=debug_mode, depth_limit=depth_limit, trans=trans)
 
         if result is None:
             return None
@@ -147,6 +151,7 @@ def negamax(state, alpha, beta, debug_mode=False, depth_limit=0, trans={}):
     else:
         assert False
 
+# TODO: This class doesn't make sense
 class AIPlayer:
     def __init__(self, playing_as):
         self.playing_as = playing_as
