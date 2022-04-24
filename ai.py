@@ -44,6 +44,7 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
     if current_hash in trans:
         (lb, ub) = trans[current_state.hash()]
         if lb == ub and lb is not None:
+            return { 'score' : lb, 'best_move' : None }
             print(f'gotcha {current_hash}-{parent_hash}')
         alpha = max_opt(alpha, lb)
         beta = min_opt(beta, ub)
