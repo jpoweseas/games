@@ -7,6 +7,10 @@ LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 4, 8], [2, 4, 6], [0, 3, 6], [1, 4
 INVERSE_LINES = [[i for (i, line) in enumerate(LINES) if x in line] for x in range(9)]
 
 class TicTacToe:
+    WIN_VALUE = 10000
+    LOSE_VALUE = -10000
+    TIE_VALUE = 0
+
     LINES = LINES
     INVERSE_LINES = INVERSE_LINES
 
@@ -101,13 +105,33 @@ class TicTacToe:
 
         return open_lines
 
+    def winner_score(self):
+        winner = self.winner()
+        if not winner:
+            return None
+        elif winner == 'A':
+            return TicTacToe.WIN_VALUE
+        elif winner == 'B':
+            return TicTacToe.LOSE_VALUE
+        elif winner == 'tie':
+            return TicTacToe.TIE_VALUE
+        else:
+            assert False
+
     # assumes no winner
+    # TODO: we now assume that this does do winners properly
     def old_evaluate(self):
+        winner_score = self.winner_score()
+        if winner_score:
+            return winner_score
         return self.open_lines('A') - self.open_lines('B')
 
     # assumes no winner
     # TODO: Test it's the same
     def evaluate(self):
+        winner_score = self.winner_score()
+        if winner_score:
+            return winner_score
         return self.memory['num_bs'].count(0) - self.memory['num_as'].count(0)
 
     # TODO: make this faster, make this version to_reversible_format
@@ -204,8 +228,9 @@ if __name__ == '__main__':
         ref_ai.choose_move(choices, state, debug_mode=True, depth_limit=100)
     else:
         state = TicTacToe()
-        for move in [4, 1, 0]:
-            state = state.add_new_mark_and_flip_turn(move)
+        # for move in [4, 1, 0]:
+        #     state = state.add_new_mark_and_flip_turn(move)
+
         ai = AIPlayer(playing_as='A')
         node_type, choices = state.next_node()
-        ai.choose_move(choices, state, debug_mode=True, depth_limit=100)
+        ai.choose_move(choices, state, debug_mode=True, depth_limit=6)

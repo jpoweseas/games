@@ -1,9 +1,5 @@
 import csv
 
-WIN_VALUE = 10000
-LOSE_VALUE = -10000
-TIE_VALUE = 0
-
 # current_state_hash=id,<state sexp>,score,alpha_after?,beta_after?,children_in_eval_order
 
 def max_opt(a, b):
@@ -24,7 +20,7 @@ def resolve_random(state_with_probability_list, debug_mode=False, depth_limit=0)
     return sum([prob * negamax(state, depth_limit=(depth_limit - 1)) for state in state_with_probability_list])
 
 def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=0, trans=None):
-    if not trans:
+    if trans is None:
         trans = {}
 
     init_alpha = alpha
@@ -43,11 +39,11 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
     current_hash = current_state.hash()
     if current_hash in trans:
         (lb, ub) = trans[current_state.hash()]
-        if lb == ub and lb is not None:
-            return { 'score' : lb, 'best_move' : None }
-            print(f'gotcha {current_hash}-{parent_hash}')
+        # if lb == ub and lb is not None:
+        #     print(f'gotcha {current_hash}-{parent_hash}')
         alpha = max_opt(alpha, lb)
         beta = min_opt(beta, ub)
+        best_score_so_far = ub if invert else lb
     else:
         lb, ub = None, None
 
@@ -80,6 +76,7 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
     else:
         # when we don't cutoff
         trans[current_state.hash()] = (best_score_so_far, best_score_so_far)
+        pass
 
     if debug_mode:
         is_cutoff = len(children_in_eval_order) < len(state_choices)
@@ -97,7 +94,7 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
     if best_score_so_far is None:
         # This is the case where every possible play results in a cutoff
         # Not true now that we're not returning Nones?
-        print('should be impossible?')
+        print('should be impossible?', current_state.hash())
         return None
     else:
         return { 'score' : best_score_so_far, 'best_move' : best_move }
@@ -108,43 +105,29 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
 # alpha < beta normally, when it flips that game tree is doneso
 # return type looks like { score }
 def negamax(state, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=0, trans=None):
-    if not trans:
+    if trans is None:
         trans = {}
-
-    if depth_limit < 0:
-        assert False
-    elif depth_limit == 0:
-        return state.evaluate()
 
     node_type, node = state.next_node()
 
-    if node_type == 'Random':
+    if depth_limit < 0:
         assert False
 
-    elif node_type == "Terminal":
-        if node == 'A':
-            ret = WIN_VALUE
-        elif node == 'B':
-            ret = LOSE_VALUE
-        elif node == 'tie':
-            ret = TIE_VALUE
-        else:
-            assert False
-
+    elif node_type == "Terminal" or depth_limit == 0:
+        score = state.evaluate()
         if debug_mode:
             debug_mode.writerow([
                 state.hash(),
                 parent_hash,
                 state.to_reversible_format(),
-                ret,
+                score,
                 alpha,
                 beta,
-                # '|'.join(children_in_eval_order),
-                # is_cutoff
-                None, None
+                [],
+                False
                 ])
 
-        return ret
+        return score
 
     elif node_type == 'A' or node_type == 'B':
         result = evaluate_player_node(state, node.values(), (node_type == 'B'), alpha, beta, parent_hash=parent_hash, debug_mode=debug_mode, depth_limit=depth_limit, trans=trans)
@@ -153,6 +136,9 @@ def negamax(state, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=
             return None
         else:
             return result['score']
+
+    if node_type == 'Random':
+        assert False
 
     else:
         assert False
@@ -163,6 +149,11 @@ class AIPlayer:
         self.playing_as = playing_as
 
     def choose_move(self, choices, current_state, debug_mode=False, depth_limit=6):
+        # node_type, choices = state.next_node()
+
+        # if node_type not in ['A', 'B']:
+        #     assert False
+
         if debug_mode:
             csvfile = open('out.csv', 'w', newline='')
             csv_writer = csv.writer(csvfile)
