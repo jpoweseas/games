@@ -32,7 +32,6 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
     if not invert:
         state_choices = state_choices[::-1]
 
-    best_score_so_far = None
     best_move = None
 
     # lb, ub represent our bounds on the ACTUAL utility of the move
@@ -46,13 +45,19 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
         best_score_so_far = ub if invert else lb
     else:
         lb, ub = None, None
+        best_score_so_far = None
 
     if debug_mode:
         children_in_eval_order = []
 
     for state in state_choices:
         if alpha is not None and beta is not None and alpha >= beta:
-            # Don't update bounds .. for now
+            if invert:
+                ub = best_score_so_far
+            else:
+                lb = best_score_so_far
+
+            trans[current_state.hash()] = (lb, ub)
             break
 
         if debug_mode:
