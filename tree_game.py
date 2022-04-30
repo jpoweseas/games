@@ -92,7 +92,8 @@ class TreeGame:
 
     # stupid
     def to_reversible_format(self):
-        return 3 ** self.current_node
+        node = self.get_current_node()
+        return f'{node["type"]}{self.current_node}'
 
     def __repr__(self):
         return f'current_node: {self.current_node}\n' + \

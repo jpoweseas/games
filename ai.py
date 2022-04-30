@@ -19,12 +19,16 @@ def min_opt(a, b):
 def resolve_random(state_with_probability_list, debug_mode=False, depth_limit=0):
     return sum([prob * negamax(state, depth_limit=(depth_limit - 1)) for state in state_with_probability_list])
 
-def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=0, trans=None):
+def evaluate_player_node(current_state, choices, invert, alpha, beta, history=None, debug_mode=False, depth_limit=0, trans=None):
     if trans is None:
         trans = {}
 
-    init_alpha = alpha
-    init_beta = beta
+    if history is None:
+        history = []
+
+    if debug_mode:
+        init_alpha = alpha
+        init_beta = beta
 
     state_choices = [current_state.resolve_choice(choice) for choice in choices]
     state_choices.sort(key=lambda state : state.evaluate())
@@ -38,78 +42,82 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, parent_has
     current_hash = current_state.hash()
     if current_hash in trans:
         (lb, ub) = trans[current_state.hash()]
-        # if lb == ub and lb is not None:
-        #     print(f'gotcha {current_hash}-{parent_hash}')
+        is_lookup = lb == ub and lb is not None
         alpha = max_opt(alpha, lb)
         beta = min_opt(beta, ub)
-        best_score_so_far = ub if invert else lb
     else:
         lb, ub = None, None
-        best_score_so_far = None
+        is_lookup = False
 
     if debug_mode:
+        init_lb, init_ub = lb, ub
         children_in_eval_order = []
+
+    best_possible_score = None
+    best_possible_score_is_bounded = True
 
     for state in state_choices:
         if alpha is not None and beta is not None and alpha >= beta:
-            if invert:
-                ub = best_score_so_far
-            else:
-                lb = best_score_so_far
-
-            trans[current_state.hash()] = (lb, ub)
             break
 
         if debug_mode:
             children_in_eval_order.append(str(state.hash()))
 
-        score = negamax(state, alpha, beta, parent_hash=current_hash, debug_mode=debug_mode, depth_limit=(depth_limit - 1), trans=trans)
+        result = negamax(state, alpha, beta, history=(history[:] + [str(current_hash)]), debug_mode=debug_mode, depth_limit=(depth_limit - 1), trans=trans)
+        child_lb = result['lb']
+        child_ub = result['ub']
 
-        if score is None:
-            continue
-
+        # A updates the lower bound every time he finds a better move
+        # A must assume everything is as bad as possible, i.e. lower bounds
         if invert:
-            beta = min_opt(score, beta)
-            if best_score_so_far is None or score < best_score_so_far:
-                best_score_so_far = score
+            # TODO: move this inside if statement?
+            beta = min_opt(child_ub, beta)
+            # best_possible_score = min_opt(best_possible_score, child_lb)
+            best_possible_score = None if not best_possible_score_is_bounded or child_lb is None else min_opt(best_possible_score, child_lb)
+            if ub is None or (child_ub is not None and child_ub < ub):
+                ub = child_ub
                 best_move = state
         else:
-            alpha = max_opt(alpha, score)
-            if best_score_so_far is None or score > best_score_so_far:
-                best_score_so_far = score
+            alpha = max_opt(alpha, child_lb)
+            best_possible_score = None if not best_possible_score_is_bounded or child_ub is None else max_opt(best_possible_score, child_ub)
+            if lb is None or (child_lb is not None and child_lb > lb):
+                lb = child_lb
                 best_move = state
     else:
         # when we don't cutoff
-        trans[current_state.hash()] = (best_score_so_far, best_score_so_far)
+        if invert:
+            lb = max_opt(best_possible_score, lb)
+        else:
+            ub = min_opt(best_possible_score, ub)
         pass
+
+    # Don't put reflections back in the table
+    if not is_lookup:
+        trans[current_hash] = (lb, ub)
 
     if debug_mode:
         is_cutoff = len(children_in_eval_order) < len(state_choices)
         debug_mode.writerow([
             current_state.hash(),
-            parent_hash,
+            '|'.join(history),
             current_state.to_reversible_format(),
-            best_score_so_far,
+            f'{lb}/{ub}',
             init_alpha,
             init_beta,
             '|'.join(children_in_eval_order),
-            is_cutoff
-            ])
+            is_cutoff,
+            init_lb,
+            init_ub
+        ])
 
-    if best_score_so_far is None:
-        # This is the case where every possible play results in a cutoff
-        # Not true now that we're not returning Nones?
-        print('should be impossible?', current_state.hash())
-        return None
-    else:
-        return { 'score' : best_score_so_far, 'best_move' : best_move }
+    return { 'lb' : lb, 'ub' : ub, 'best_move' : best_move }
 
 # Returns A's score of the subgame, or None if this part of the game tree will not be used
 # alpha : best choice available to player A
 # beta  : best choice available to player B
 # alpha < beta normally, when it flips that game tree is doneso
 # return type looks like { score }
-def negamax(state, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=0, trans=None):
+def negamax(state, alpha, beta, history=None, debug_mode=False, depth_limit=0, trans=None):
     if trans is None:
         trans = {}
 
@@ -123,7 +131,7 @@ def negamax(state, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=
         if debug_mode:
             debug_mode.writerow([
                 state.hash(),
-                parent_hash,
+                '|'.join(history),
                 state.to_reversible_format(),
                 score,
                 alpha,
@@ -132,17 +140,18 @@ def negamax(state, alpha, beta, parent_hash=None, debug_mode=False, depth_limit=
                 False
                 ])
 
-        return score
+        return { 'lb' : score, 'ub' : score }
 
     elif node_type == 'A' or node_type == 'B':
-        result = evaluate_player_node(state, node.values(), (node_type == 'B'), alpha, beta, parent_hash=parent_hash, debug_mode=debug_mode, depth_limit=depth_limit, trans=trans)
+        result = evaluate_player_node(state, node.values(), (node_type == 'B'), alpha, beta, history=history, debug_mode=debug_mode, depth_limit=depth_limit, trans=trans)
 
         if result is None:
-            return None
+            print('impossible!')
+            assert False
         else:
-            return result['score']
+            return result
 
-    if node_type == 'Random':
+    elif node_type == 'Random':
         assert False
 
     else:

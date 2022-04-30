@@ -5,6 +5,15 @@ from reference_ai import SimpleAIPlayer
 
 LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 4, 8], [2, 4, 6], [0, 3, 6], [1, 4, 7], [2, 5, 8]]
 INVERSE_LINES = [[i for (i, line) in enumerate(LINES) if x in line] for x in range(9)]
+SYMMETRIES = [
+    [2, 1, 0, 5, 4, 3, 8, 7, 6],
+    [6, 7, 8, 3, 4, 5, 0, 1, 2],
+    [0, 3, 6, 1, 4, 7, 2, 5, 8],
+    [8, 5, 2, 7, 4, 1, 6, 3, 0],
+    [6, 3, 0, 7, 4, 1, 8, 5, 2],
+    [8, 7, 6, 5, 4, 3, 2, 1, 0],
+    [2, 5, 8, 1, 4, 7, 0, 3, 6]
+]
 
 class TicTacToe:
     WIN_VALUE = 10000
@@ -13,6 +22,7 @@ class TicTacToe:
 
     LINES = LINES
     INVERSE_LINES = INVERSE_LINES
+    SYMMETRIES = SYMMETRIES
 
     def __init__(self, board=None, a_turn = True, memory = None):
         board = board if board else [None for _ in range(9)]
@@ -138,6 +148,12 @@ class TicTacToe:
     def hash(self):
         return sum([(0 if self.board[i] is None else 1 if self.board[i] == 'A' else 2) * (3 ** i) for i in range(9)])
 
+    def symmetric_hashes(self):
+        out = []
+        for sym in TicTacToe.SYMMETRIES:
+            out.append(sum([(0 if self.board[sym[i]] is None else 1 if self.board[sym[i]] == 'A' else 2) * (3 ** i) for i in range(9)]))
+        return out
+
     def to_reversible_format(self):
         return str(self.hash())
 
@@ -218,7 +234,17 @@ class Tests(unittest.TestCase):
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == 'test':
         unittest.main()
-    if len(sys.argv) > 1 and sys.argv[1] == 'ref':
+    elif len(sys.argv) > 1 and sys.argv[1] == 'sym':
+        state = TicTacToe()
+        for move in [4, 1, 0, 8]:
+            state = state.add_new_mark_and_flip_turn(move)
+        print(state)
+        for sym_hash in state.symmetric_hashes():
+            # Uses the fact that hash = rev format for TicTacToe
+            new_state = TicTacToe.from_reversible_format(sym_hash)
+            print(new_state)
+
+    elif len(sys.argv) > 1 and sys.argv[1] == 'ref':
         state = TicTacToe()
         for move in [4, 1, 0]:
             state = state.add_new_mark_and_flip_turn(move)

@@ -79,32 +79,41 @@ class BasicTests(unittest.TestCase):
 
     def test_trivial(self):
         state = create_tree('A')
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
+        result = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
+        self.assertEqual(result['lb'], result['ub'])
+        score = result['ub']
 
         self.assertEqual(score, TreeGame.WIN_VALUE)
 
     def test_simple(self):
         state = create_tree([0, [-1, 'A', 'B'], [1, 'A', 'A']])
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
+        result = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
+        self.assertEqual(result['lb'], result['ub'])
+        score = result['ub']
 
         self.assertEqual(score, TreeGame.WIN_VALUE)
 
     def test_limited_depth(self):
         state = create_tree([0, [-1, 'A', 'B'], [1, 'A', 'A']])
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=1)
+        result = ai.negamax(state, alpha=None, beta=None, depth_limit=1)
+        self.assertEqual(result['lb'], result['ub'])
+        score = result['ub']
 
         self.assertEqual(score, 1)
 
     def test_depth_two(self):
         state = create_tree([0, [-1, [-2, 'B', 'B'], 'B'], [1, [1, 'B', 'A'], [2, 'A', 'B']]])
-        score = ai.negamax(state, alpha=None, beta=None, depth_limit=3)
+        result = ai.negamax(state, alpha=None, beta=None, depth_limit=3)
+        self.assertEqual(result['lb'], result['ub'])
+        score = result['ub']
 
         self.assertEqual(score, TreeGame.WIN_VALUE)
 
     def test_possible_cutoff(self):
         state = create_tree([0, 'tie', [-10, [-100, 'B'], [-10, 'A', 'B']]])
         result = ai.negamax(state, alpha=None, beta=None, depth_limit=3)
-        score = result
+        self.assertEqual(result['lb'], result['ub'])
+        score = result['ub']
 
         self.assertEqual(score, 0)
 
@@ -124,14 +133,20 @@ class BasicTests(unittest.TestCase):
         state = TreeGame(tree=tree, root=0)
         node_type, choices = state.next_node()
         result = ai.negamax(state, alpha=None, beta=None, depth_limit=100)
-        score = result
+        self.assertEqual(result['lb'], result['ub'])
+        score = result['ub']
 
         self.assertEqual(score, 10000)
+
+        player = ai.AIPlayer('A')
+        player.choose_move(choices, state, debug_mode=True)
 
     # def test_first_four_levels(self):
     #     def compare_ai_against_reference(state):
     #         to_play = state.get_player_to_play()
-    #         score = ai.negamax(state, alpha=None, beta=None, depth_limit=6)
+    #         result = ai.negamax(state, alpha=None, beta=None, depth_limit=6)
+    #         self.assertEqual(result['lb'], result['ub'])
+    #         score = result['lb']
     #         ref_score = reference_ai.negamax(state, depth_limit=6)
     #         self.assertEqual(score, ref_score, msg='\n'+str(state))
 
@@ -152,6 +167,7 @@ if __name__ == '__main__':
     #     7 : { 'type' : 'Terminal', 'winner' : 'A' },
     #     8 : { 'type' : 'A', 'score': -3, 'children' : [5, 6] },
     # }
+
 
     # state = TreeGame(tree=tree, root=0)
     # node_type, choices = state.next_node()
