@@ -154,6 +154,10 @@ class TicTacToe:
             out.append(sum([(0 if self.board[sym[i]] is None else 1 if self.board[sym[i]] == 'A' else 2) * (3 ** i) for i in range(9)]))
         return out
 
+    def unique_hash(self):
+        hashes = self.symmetric_hashes()
+        return min(hashes)
+
     def to_reversible_format(self):
         return str(self.hash())
 

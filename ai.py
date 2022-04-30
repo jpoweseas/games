@@ -41,13 +41,24 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, history=No
     # lb, ub represent our bounds on the ACTUAL utility of the move
     # (lb, ub) = trans[current_state.hash()]
     current_hash = current_state.hash()
+    # lb = None
+    # ub = None
+    # for sym_hash in current_state.symmetric_hashes():
+    #     if sym_hash in trans:
+    #         (sym_lb, sym_ub) = trans[sym_hash]
+    #         lb = max_opt(lb, sym_lb)
+    #         ub = max_opt(ub, sym_ub)
+    # is_lookup = lb == ub and lb is not None
+    # alpha = max_opt(alpha, lb)
+    # beta = min_opt(beta, ub)
+
+    unique_hash = current_state.unique_hash()
     lb = None
     ub = None
-    for sym_hash in current_state.symmetric_hashes():
-        if sym_hash in trans:
-            (sym_lb, sym_ub) = trans[sym_hash]
-            lb = max_opt(lb, sym_lb)
-            ub = max_opt(ub, sym_ub)
+    if unique_hash in trans:
+        (sym_lb, sym_ub) = trans[unique_hash]
+        lb = max_opt(lb, sym_lb)
+        ub = max_opt(ub, sym_ub)
     is_lookup = lb == ub and lb is not None
     alpha = max_opt(alpha, lb)
     beta = min_opt(beta, ub)
@@ -96,7 +107,8 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, history=No
 
     # Don't put reflections back in the table
     if not is_lookup:
-        trans[current_hash] = (lb, ub)
+        # trans[current_hash] = (lb, ub)
+        trans[unique_hash] = (lb, ub)
 
     if debug_mode:
         is_cutoff = len(children_in_eval_order) < len(state_choices)
