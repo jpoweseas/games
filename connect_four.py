@@ -4,14 +4,26 @@ def read_winners(filename='connect_four_winners.csv'):
     with open(filename) as f:
         return [[(int(i) // 7, int(i) % 7) for i in line] for line in csv.reader(f)]
 
+WIN_VALUE = 10000
+LOSE_VALUE = -10000
+TIE_VALUE = 0
+
 class ConnectFour:
     WINNERS = read_winners()
+    INVERSE_WINNERS = [[i for (i, line) in enumerate(WINNERS) if x in line] for x in range(42)]
 
-    def __init__(self, board = None, a_turn = True):
-        board = board if board else [[] for _ in range(7)]
+    def __init__(self, board = None, a_turn = True, memory=None):
+        if not board:
+            board = [[] for _ in range(7)]
+            # memory = { 'num_as' : num_as, 'num_bs', num_bs, 'winner' : None }
+        elif not memory:
+            print('Cannot pass in board and not memory')
+            assert False
+
         self.board = board
-
         self.a_turn = a_turn
+
+    # ACCESSORS
 
     def get_player_to_play(self):
         return 'A' if self.a_turn else 'B'
@@ -22,6 +34,21 @@ class ConnectFour:
             return self.board[col_index][row_index]
         else:
             return None
+
+    def place_possibly_hovering(self, col_index, row_index):
+        # Check that the column is tall enough
+        if row_index < len(self.board[col_index]):
+            self.board[col_index][row_index] = 'A'
+        else:
+            # Add blank spots after the current end of the column
+            spots_to_add = row_index - len(self.board[col_index])
+            self.board[col_index].extend([None for _ in range(spots_to_add)])
+            self.board[col_index].append('A')
+
+    def open_columns(self):
+        return [i for i in range(7) if len(self.board[i]) < 6]
+
+    # EVALUATION
 
     def winner(self):
         for l in ConnectFour.WINNERS:
@@ -77,41 +104,6 @@ class ConnectFour:
         if all([len(col) == 6 for col in self.board]):
             return 'tie'
 
-    def place_possibly_hovering(self, col_index, row_index):
-        # Check that the column is tall enough
-        if row_index < len(self.board[col_index]):
-            self.board[col_index][row_index] = 'A'
-        else:
-            # Add blank spots after the current end of the column
-            spots_to_add = row_index - len(self.board[col_index])
-            self.board[col_index].extend([None for _ in range(spots_to_add)])
-            self.board[col_index].append('A')
-
-    def add_new_mark_and_flip_turn(self, col_index):
-        board = copy.deepcopy(self.board)
-        if len(board[col_index]) < 6:
-            board[col_index].append(self.get_player_to_play())
-        else:
-            assert False
-
-        new_state = ConnectFour(board, a_turn = not self.a_turn)
-        new_state.evaluate = self.evaluate
-        return new_state
-
-    def next_node(self):
-        open_columns = [i for i in range(7) if len(self.board[i]) < 6]
-
-        winner = self.winner()
-        if winner is not None:
-            return 'Terminal', winner
-        elif self.a_turn:
-            return 'A', {str(i) : i for i in open_columns}
-        else:
-            return 'B', {str(i) : i for i in open_columns}
-
-    def resolve_choice(self, choice):
-        return self.add_new_mark_and_flip_turn(choice)
-
     def old_evaluate(self):
         lasts = [col[-1] for col in self.board if len(col) > 0]
         lefts = [self.get_piece(col_index - 1, len(self.board[col_index])) for col_index in range(7)]
@@ -131,6 +123,35 @@ class ConnectFour:
                 score += 1
 
         return score
+
+    # GAMEPLAY
+
+    def add_new_mark_and_flip_turn(self, col_index):
+        board = copy.deepcopy(self.board)
+        if len(board[col_index]) < 6:
+            board[col_index].append(self.get_player_to_play())
+        else:
+            assert False
+
+        new_state = ConnectFour(board, a_turn = not self.a_turn)
+        new_state.evaluate = self.evaluate
+        return new_state
+
+    def next_node(self):
+        open_columns = self.open_columns()
+
+        winner = self.winner()
+        if winner is not None:
+            return 'Terminal', winner
+        elif self.a_turn:
+            return 'A', { str(i) : i for i in open_columns }
+        else:
+            return 'B', { str(i) : i for i in open_columns }
+
+    def resolve_choice(self, choice):
+        return self.add_new_mark_and_flip_turn(choice)
+
+    # REPRESENTATION
 
     def __repr__(self):
         def print_cell(col_num, row_num):
