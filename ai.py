@@ -39,15 +39,18 @@ def evaluate_player_node(current_state, choices, invert, alpha, beta, history=No
     best_move = None
 
     # lb, ub represent our bounds on the ACTUAL utility of the move
+    # (lb, ub) = trans[current_state.hash()]
     current_hash = current_state.hash()
-    if current_hash in trans:
-        (lb, ub) = trans[current_state.hash()]
-        is_lookup = lb == ub and lb is not None
-        alpha = max_opt(alpha, lb)
-        beta = min_opt(beta, ub)
-    else:
-        lb, ub = None, None
-        is_lookup = False
+    lb = None
+    ub = None
+    for sym_hash in current_state.symmetric_hashes():
+        if sym_hash in trans:
+            (sym_lb, sym_ub) = trans[sym_hash]
+            lb = max_opt(lb, sym_lb)
+            ub = max_opt(ub, sym_ub)
+    is_lookup = lb == ub and lb is not None
+    alpha = max_opt(alpha, lb)
+    beta = min_opt(beta, ub)
 
     if debug_mode:
         init_lb, init_ub = lb, ub

@@ -149,7 +149,7 @@ class TicTacToe:
         return sum([(0 if self.board[i] is None else 1 if self.board[i] == 'A' else 2) * (3 ** i) for i in range(9)])
 
     def symmetric_hashes(self):
-        out = []
+        out = [self.hash()]
         for sym in TicTacToe.SYMMETRIES:
             out.append(sum([(0 if self.board[sym[i]] is None else 1 if self.board[sym[i]] == 'A' else 2) * (3 ** i) for i in range(9)]))
         return out
