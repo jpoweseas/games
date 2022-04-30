@@ -8,9 +8,12 @@ WIN_VALUE = 10000
 LOSE_VALUE = -10000
 TIE_VALUE = 0
 
+WINNERS = read_winners()
+INVERSE_WINNERS = [[i for (i, line) in enumerate(WINNERS) if x in line] for x in range(42)]
+
 class ConnectFour:
-    WINNERS = read_winners()
-    INVERSE_WINNERS = [[i for (i, line) in enumerate(WINNERS) if x in line] for x in range(42)]
+    WINNERS = WINNERS
+    INVERSE_WINNERS = INVERSE_WINNERS
 
     def __init__(self, board = None, a_turn = True, memory=None):
         if not board:

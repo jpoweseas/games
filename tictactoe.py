@@ -34,7 +34,7 @@ class TicTacToe:
             num_as = [0 for _ in LINES]
             num_bs = [0 for _ in LINES]
 
-            self.memory = { 'num_as' : num_as, 'num_bs' : num_bs, 'winner' : None }
+            self.memory = { 'num_as' : num_as, 'num_bs' : num_bs, 'winner' : None, 'hash' : 0, 'sym_hashes' : [0 for _ in range(7)] }
         else:
             self.memory = memory
 
@@ -68,12 +68,19 @@ class TicTacToe:
         memory = self.memory.copy()
         if player_to_play == 'A':
             memory['num_as'] = memory['num_as'].copy()
+            memory['sym_hashes'] = memory['sym_hashes'].copy()
+            memory['hash'] = (3 ** space) + memory['hash']
+            for sym_idx, sym in enumerate(TicTacToe.SYMMETRIES):
+                memory['sym_hashes'][sym_idx] = (3 ** sym[space]) + memory['sym_hashes'][sym_idx]
             for line_idx in TicTacToe.INVERSE_LINES[space]:
                 memory['num_as'][line_idx] += 1
                 if memory['num_as'][line_idx] == 3:
                     memory['winner'] = 'A'
         elif player_to_play == 'B':
             memory['num_bs'] = memory['num_bs'].copy()
+            memory['hash'] = 2 * (3 ** space) + memory['hash']
+            for sym_idx, sym in enumerate(TicTacToe.SYMMETRIES):
+                memory['sym_hashes'][sym_idx] = 2 * (3 ** sym[space]) + memory['sym_hashes'][sym_idx]
             for line_idx in TicTacToe.INVERSE_LINES[space]:
                 memory['num_bs'][line_idx] += 1
                 if memory['num_bs'][line_idx] == 3:
@@ -145,14 +152,20 @@ class TicTacToe:
         return self.memory['num_bs'].count(0) - self.memory['num_as'].count(0)
 
     # TODO: make this faster, make this version to_reversible_format
-    def hash(self):
+    def old_hash(self):
         return sum([(0 if self.board[i] is None else 1 if self.board[i] == 'A' else 2) * (3 ** i) for i in range(9)])
 
-    def symmetric_hashes(self):
+    def hash(self):
+        return self.memory['hash']
+
+    def old_symmetric_hashes(self):
         out = [self.hash()]
         for sym in TicTacToe.SYMMETRIES:
             out.append(sum([(0 if self.board[sym[i]] is None else 1 if self.board[sym[i]] == 'A' else 2) * (3 ** i) for i in range(9)]))
         return out
+
+    def symmetric_hashes(self):
+        return self.memory['sym_hashes']
 
     def unique_hash(self):
         hashes = self.symmetric_hashes()
@@ -162,6 +175,7 @@ class TicTacToe:
         return str(self.hash())
 
     def from_reversible_format(fmt):
+        fmt = int(fmt)
         board = []
 
         num_pieces = 0
@@ -235,9 +249,25 @@ class Tests(unittest.TestCase):
             self.assertEqual(state.board, TicTacToe.from_reversible_format(state.to_reversible_format()).board)
             states_to_check.extend([state.resolve_choice(choice) for choice in node.values()])
 
+    def test_hash(self):
+        init_state = TicTacToe()
+
+        # TODO: rewrite to use for_each_state
+        states_to_check = [init_state]
+        while len(states_to_check) > 0:
+            state = states_to_check.pop()
+
+            node_type, node = state.next_node()
+            if node_type == 'Terminal':
+                continue
+
+            self.assertEqual(state.old_hash(), state.hash())
+            states_to_check.extend([state.resolve_choice(choice) for choice in node.values()])
+
 if __name__ == '__main__':
+    unittest.main()
     if len(sys.argv) > 1 and sys.argv[1] == 'test':
-        unittest.main()
+        pass
     elif len(sys.argv) > 1 and sys.argv[1] == 'sym':
         state = TicTacToe()
         for move in [4, 1, 0, 8]:
