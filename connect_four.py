@@ -19,9 +19,9 @@ class ConnectFour:
         if not board:
             board = [[] for _ in range(7)]
             # memory = { 'num_as' : num_as, 'num_bs', num_bs, 'winner' : None }
-        elif not memory:
-            print('Cannot pass in board and not memory')
-            assert False
+        # elif not memory:
+        #     print('Cannot pass in board and not memory')
+        #     assert False
 
         self.board = board
         self.a_turn = a_turn
@@ -155,6 +155,24 @@ class ConnectFour:
         return self.add_new_mark_and_flip_turn(choice)
 
     # REPRESENTATION
+
+    def unsafe_hash(self):
+        def col_to_hash(col):
+            out = len(col)
+            for (x, i) in enumerate(col):
+                if x == 'A':
+                    out += 1 << i
+            return out
+        out = 0
+        for (i, col) in enumerate(self.board):
+            out += col_to_hash(col) << (9 * i)
+        return out
+
+    def hash(self):
+        return self.unsafe_hash()
+
+    def unique_hash(self):
+        return self.unsafe_hash()
 
     def __repr__(self):
         def print_cell(col_num, row_num):

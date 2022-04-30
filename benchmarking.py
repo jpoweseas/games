@@ -6,13 +6,15 @@ from tictactoe import TicTacToe
 import time
 
 def bench(ai, depth_limit, ai_str):
-    state = TicTacToe()
+    # state = TicTacToe()
+    state = ConnectFour()
     node_type, node = state.next_node()
 
     assert (node_type == 'A')
 
     start = time.time()
-    ai.choose_move(node, state, debug_mode=True, depth_limit=depth_limit)
+    # ai.choose_move(node, state, debug_mode=True, depth_limit=depth_limit)
+    ai.choose_move(node, state, debug_mode=False, depth_limit=depth_limit)
     stop = time.time()
 
     ms = (stop - start) * 1000
